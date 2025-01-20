@@ -78,6 +78,18 @@ describe('Blog app', () => {
   
         await expect(blogElement.getByTestId('likes')).toHaveText(/1/)
       })
+
+      test('a blog can be deleted', async ({ page }) => {
+        const blogText = await page.getByText('New blog created by test Amy Sun')
+        const blogElement = await blogText.locator('..')
+        await blogElement.getByRole('button', { name: 'view' }).click()
+        
+        // handle dialog
+        page.on('dialog', dialog => dialog.accept())
+        await blogElement.getByRole('button', { name: 'remove' }).click()
+        
+        await expect(page.getByText('New blog created by test Amy Sun')).not.toBeVisible()
+      })
     })
   })
 })
