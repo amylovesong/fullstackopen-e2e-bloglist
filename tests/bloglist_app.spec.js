@@ -1,5 +1,5 @@
 const { test, expect, beforeEach, describe } = require('@playwright/test')
-const { createBlog } = require('./helper')
+const { createBlog, loginWith } = require('./helper')
 
 describe('Blog app', () => {
   beforeEach(async ({ page, request }) => {
@@ -9,6 +9,13 @@ describe('Blog app', () => {
         username: 'amylovesong',
         password: 'abcd',
         name: 'Amy Sun'
+      }
+    })
+    await request.post('http://localhost:3003/api/users', {
+      data: {
+        username: 'leon',
+        password: 'abcd',
+        name: 'Leon Ma'
       }
     })
 
@@ -22,19 +29,13 @@ describe('Blog app', () => {
 
   describe('Login', () => {
     test('succeeds with correct credentials', async ({ page }) => {
-      await page.getByTestId('username').fill('amylovesong')
-      await page.getByTestId('password').fill('abcd')
-
-      await page.getByRole('button', { name: 'login' }).click()
+      await loginWith(page, 'amylovesong', 'abcd')
 
       await expect(page.getByText('Amy Sun logged in')).toBeVisible()
     })
 
     test('fails with wrong credentials', async ({ page }) => {
-      await page.getByTestId('username').fill('amylovesong')
-      await page.getByTestId('password').fill('wrong')
-
-      await page.getByRole('button', { name: 'login' }).click()
+      await loginWith(page, 'amylovesong', 'wrong')
 
       const notificationDiv = await page.locator('.notification')
       await expect(notificationDiv).toHaveText('wrong username or password')
@@ -47,10 +48,7 @@ describe('Blog app', () => {
 
   describe('When logged in', () => {
     beforeEach(async ({ page }) => {
-      await page.getByTestId('username').fill('amylovesong')
-      await page.getByTestId('password').fill('abcd')
-
-      await page.getByRole('button', { name: 'login' }).click()
+      await loginWith(page, 'amylovesong', 'abcd')
     })
 
     test('a new blog can be created', async ({ page }) => {
@@ -89,6 +87,24 @@ describe('Blog app', () => {
         await blogElement.getByRole('button', { name: 'remove' }).click()
         
         await expect(page.getByText('New blog created by test Amy Sun')).not.toBeVisible()
+      })
+
+      test('only the user who added the blog sees the blog\'s delete button', async ({page}) => {
+        await page.getByRole('button', { name: 'logout' }).click()
+        await loginWith(page, 'leon', 'abcd')
+        await createBlog(page, 'A blog with short title', 'Leon Ma', 'http://localhost:5173')
+
+        const blogTextNew = await page.getByText('A blog with short title Leon Ma')
+        const blogElementNew = await blogTextNew.locator('..')
+        await blogElementNew.getByRole('button', { name: 'view' }).click()
+        
+        await expect(blogElementNew.getByRole('button', { name: 'remove' })).toBeVisible()
+
+        const blogText = await page.getByText('New blog created by test Amy Sun')
+        const blogElement = await blogText.locator('..')
+        await blogElement.getByRole('button', { name: 'view' }).click()
+        
+        await expect(blogElement.getByRole('button', { name: 'remove' })).not.toBeVisible()
       })
     })
   })
