@@ -106,6 +106,33 @@ describe('Blog app', () => {
         
         await expect(blogElement.getByRole('button', { name: 'remove' })).not.toBeVisible()
       })
+
+      test('blogs are arranged in the order of likes', async ({ page }) => {
+        await createBlog(page, 'A blog with most likes', 'Amy Sun',
+          'http://localhost:5173')
+
+        // check before like button click
+        let blogs = await page.getByTestId('blog').all()
+        expect(blogs.length).toBe(2)
+        await expect(blogs[0].getByText('New blog created by test Amy Sun')).toBeVisible()
+        await expect(blogs[1].getByText('A blog with most likes Amy Sun')).toBeVisible()
+        
+        await blogs[0].getByRole('button', { name: 'view' }).click()
+        await expect(blogs[0].getByTestId('likes')).toHaveText('0')
+        await blogs[1].getByRole('button', { name: 'view' }).click()
+        await expect(blogs[1].getByTestId('likes')).toHaveText('0')
+
+        // click the like button of the second blog
+        await blogs[1].getByRole('button', { name: 'like' }).click()
+
+        // check after like button click
+        blogs = await page.getByTestId('blog').all()
+        expect(blogs.length).toBe(2)
+        await expect(blogs[0].getByText('A blog with most likes Amy Sun')).toBeVisible()
+        await expect(blogs[0].getByTestId('likes')).toHaveText('1')
+        await expect(blogs[1].getByText('New blog created by test Amy Sun')).toBeVisible()
+        await expect(blogs[1].getByTestId('likes')).toHaveText('0')
+      })
     })
   })
 })
