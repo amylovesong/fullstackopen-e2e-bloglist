@@ -70,11 +70,11 @@ describe('Blog app', () => {
         await blogElement.getByRole('button', { name: 'view' }).click()
         
         await expect(blogElement.getByTestId('likes')).toBeVisible()
-        await expect(blogElement.getByTestId('likes')).toHaveText(/0/)
+        await expect(blogElement.getByTestId('likes')).toHaveText('0')
 
         await blogElement.getByRole('button', { name: 'like' }).click()
   
-        await expect(blogElement.getByTestId('likes')).toHaveText(/1/)
+        await expect(blogElement.getByTestId('likes')).toHaveText('1')
       })
 
       test('a blog can be deleted', async ({ page }) => {
